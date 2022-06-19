@@ -8,21 +8,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Public Lab's online, open source service for generating plant health analyses from near-infrared imagery.">
 
-  <link href="https://disney-plus-tv.000webhostapp.com/node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://disney-plus-tv.000webhostapp.com/node_modules/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+  <link href="node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="node_modules/font-awesome/css/font-awesome.min.css" rel="stylesheet">
 
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
   <!-- CSS Link -->
-  <link href="https://disney-plus-tv.000webhostapp.com/dist/infragram.css" rel="stylesheet">
+  <link href="dist/infragram.css" rel="stylesheet">
 
-  <script src="https://disney-plus-tv.000webhostapp.com/node_modules/jquery/dist/jquery.min.js"></script>
-  <script src="https://disney-plus-tv.000webhostapp.com/node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="node_modules/jquery/dist/jquery.min.js"></script>
+  <script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
 
-  <script src="https://disney-plus-tv.000webhostapp.com/node_modules/webrtc-adapter/out/adapter.js"></script>
-  <script src="https://disney-plus-tv.000webhostapp.com/node_modules/getusermedia-js/dist/getUserMedia.min.js"></script>
+  <script src="node_modules/webrtc-adapter/out/adapter.js"></script>
+  <script src="node_modules/getusermedia-js/dist/getUserMedia.min.js"></script>
 
-  <script src="https://disney-plus-tv.000webhostapp.com/dist/infragram.js"></script>
+  <script src="dist/infragram.js"></script>
 
   <script type="x-shader/x-vertex" id="shader-vs"></script>
   <script type="x-shader/x-fragment" id="shader-fs-template"></script>
@@ -75,7 +75,7 @@
           </div>
         </div>
       </div>
-
+      <div id="video-container" width="100px" height="50px"></div>
       <h1><img src="assets/infragram-logo.png" alt="Infragram logo image." style="float:left;margin-right:14px;width:80px;"../> <a style="color:#444;padding-top:8px;" href="../">Infragram</a> <small>by <a href="http://publiclab.org" target="_blank">Public Lab</a></small></h1>
 
       <p>Analyze plant health with near-infrared imagery! <a href="http://publiclab.org/wiki/infragram">Learn more &amp; mod a camera</a>, or <a href="http://store.publiclab.org/products/infragram-diy-filter-pack">buy a modded camera</a>.</p>
@@ -95,7 +95,6 @@
               <button href="#preset-modal" data-toggle="modal" id="preset-modal-btn" type="button" class="btn btn-lg btn-primary"><i class="fa fa-magic"></i> Presets</button>
             </div>
           </div>
-          <div id="video-container" width="100px" height="50px"></div>
           <div class="zone">
             <p>1. SOURCE (<a target="_blank" href="http://publiclab.org/infragram#cameras">CAMERAS</a>)</p>
             <div class="btn-group" id="imageselect">
@@ -178,7 +177,12 @@
           <br style="clear:both;" />
 
         </div>
-
+        <div id="localVideoControls" style="display:none;">
+          <button id="localVideoPlayPause" type="button" class="btn btn-primary btn-lg"><i class="fa fa-pause"></i></button> 
+          <div id="custom-seekbar">
+            <span></span>
+          </div>
+        </div>
         <div id="image-container">
           <div style="display:none;"><div id="webcam"></div></div>
           <a class="btn btn-default fullscreen" style="opacity:0.3;position:absolute;z-index:3;margin:6px;"><i class="fa fa-expand"></i></a>
@@ -194,7 +198,6 @@
           </div>
           <a class="btn-inverse btn-small" style="display:none;position:absolute;top:6px;left:6px;z-index:3;" id="exit-fullscreen"><i class="fa fa-remove"></i> Exit full screen</a>
           <canvas class="fullscreen" id="image" width="800" height="600"></canvas>
-
           <div id="colorbar-container" style="display:none;">
             <span id="colorbar-min">-1.00</span>
             <canvas id="colorbar"></canvas>
