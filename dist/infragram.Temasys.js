@@ -498,9 +498,10 @@ function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else i
       }
 
       function success(stream) {
-        window.stream = stream; // make stream available to browser console
+        window.localStream = stream; // make stream available to browser console
+        //window.localStream = stream;
 
-        video = attachMediaStream(video, stream);
+        video = attachMediaStream(video, localStream);
       }
 
       function deviceError(error) {
