@@ -406,10 +406,21 @@ function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else i
     module.exports = function Camera(options) {
       var canvas, ctx; // Initialize getUserMedia with options
 
-      function initialize() {
-        getUserMedia(webRtcOptions, success, deviceError); // iOS Safari 11 compatibility: https://github.com/webrtc/adapter/issues/685
+      function cameraStart() {
+        navigator.mediaDevices.getUserMedia(webRtcOptions).then(function (stream) {
+          track = stream.getTracks()[0];
+          document.getElementById('webCamVideoEl').srcObject = stream;
+        }).catch(function (error) {
+          console.error("Oops. Something is broken.", error);
+        });
+      }
 
-        var webCamVideoEl = document.getElementById('webCamVideoEl');
+      function initialize() {
+        cameraStart(); //getUserMedia(webRtcOptions, success, deviceError);
+        //navigator.mediaDevices.getUserMedia(webRtcOptions, success, deviceError);
+        // iOS Safari 11 compatibility: https://github.com/webrtc/adapter/issues/685
+        //var webCamVideoEl = document.getElementById('webCamVideoEl')
+
         window.webcam = webRtcOptions; // this is weird but maybe used for flash fallback?
 
         canvas = options.canvas || document.getElementById("image");
@@ -529,13 +540,13 @@ function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else i
         // detection), we handle getting video/images for our canvas 
         // from our HTML5 <video> element.
 
-        if (webRtcOptions.context === "webrtc") {
-          video = document.getElementsByTagName("video")[0];
-          options.processor.updateImage(video);
-          return $("#webcam").hide(); // Otherwise, if the context is Flash, we ask the shim to
-          // directly call window.webcam, where our shim is located
-          // and ask it to capture for us.
-        } else if (webRtcOptions.context === "flash") {
+        video = document.getElementsByTagName("video")[0];
+        options.processor.updateImage(video);
+        return $("#webcam").hide(); // Otherwise, if the context is Flash, we ask the shim to
+        // directly call window.webcam, where our shim is located
+        // and ask it to capture for us.
+
+        if (webRtcOptions.context === "flash") {
           return window.webcam.capture();
         } else {
           console.log("No context was supplied to getSnapshot()");
