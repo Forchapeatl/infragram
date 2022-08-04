@@ -453,21 +453,7 @@ function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else i
         // height and width of the output stream
         // container
         width: 640,
-        height: 480,
-        // the recommended mode to be used is 
-        // "callback " where a callback is executed 
-        // once data is available
-        mode: "callback",
-        // a debugger callback is available if needed
-        debug: function debug() {},
-        // callback for capturing the fallback stream
-        onCapture: function onWebRtcCapture() {
-          return window.webcam.save();
-        },
-        // callback for saving the stream, useful for
-        // relaying data further.
-        onSave: onSaveGetUserMedia,
-        onLoad: function onLoadGetUserMedia() {}
+        height: 480
       };
 
       function onSaveGetUserMedia(data) {
