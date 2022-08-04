@@ -2286,7 +2286,6 @@ function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else i
        * Provides cancelRequestAnimationFrame in a cross browser way.
        */
 
-
       var cancelRequestAnimFrame = function () {
         return window.cancelCancelRequestAnimationFrame || window.webkitCancelRequestAnimationFrame || window.mozCancelRequestAnimationFrame || window.oCancelRequestAnimationFrame || window.msCancelRequestAnimationFrame || window.clearTimeout;
       }();
