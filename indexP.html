@@ -539,6 +539,15 @@
       }
     })()
 
+      let capture;
+
+  function setup() {
+    capture = createCapture(VIDEO);
+    let  looper = document.getElementById('webcam');
+    capture.parent(looper);
+
+  }
+
 
 
   </script>
