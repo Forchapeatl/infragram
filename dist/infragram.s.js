@@ -403,22 +403,12 @@ function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else i
     // This file was adapted from infragram-js:
     // http://github.com/p-v-o-s/infragram-js.
     module.exports = function Camera(options) {
-      var canvas, ctx; // Initialize getUserMedia with options
-
-      function cameraStart() {
-        navigator.mediaDevices.getUserMedia(webRtcOptions).then(function (stream) {
-          track = stream.getTracks()[0];
-          document.getElementById('webCamVideoEl').srcObject = stream;
-        }).catch(function (error) {
-          console.error("Oops. Something is broken.", error);
-        });
-      }
+      var canvas, ctx;
+      options.webcamVideoSelector = options.webcamVideoSelector || 'webcamVideoEl';
+      options.webcamVideoEl = document.getElementById(options.webcamVideoSelector); // Initialize getUserMedia with options
 
       function initialize() {
-        cameraStart(); //getUserMedia(webRtcOptions, success, deviceError);
-        //navigator.mediaDevices.getUserMedia(webRtcOptions, success, deviceError);
-        // iOS Safari 11 compatibility: https://github.com/webrtc/adapter/issues/685
-        //var webCamVideoEl = document.getElementById('webCamVideoEl')
+        navigator.mediaDevices.getUserMedia(webRtcOptions).then(success).catch(deviceError); // iOS Safari 11 compatibility: https://github.com/webrtc/adapter/issues/685     
 
         window.webcam = webRtcOptions; // this is weird but maybe used for flash fallback?
 
@@ -432,8 +422,8 @@ function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else i
       }
 
       function unInitialize() {
-        //Initialize Webrtc without webcam
-        navigator.mediaDevices.getUserMedia(webRtcOptions, success, deviceError); //getUserMedia(webRtcOptions, falseSuccess, deviceError);       
+        //Initialize stream without webcam
+        navigator.mediaDevices.getUserMedia(webRtcOptions).then(falseSuccess).catch(deviceError);
       } // webRtcOptions contains the configuration information for the shim
       // it allows us to specify the width and height of the video
       // output we"re working with, the location of the fallback swf,
@@ -501,24 +491,14 @@ function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else i
       }
 
       function success(stream) {
-        var video;
         window.localStream = stream;
         isOnCam = stream;
         isCamera = true;
-
-        if (webRtcOptions.context === "webrtc") {
-          video = webRtcOptions.videoEl;
-
-          if (navigator.mozGetUserMedia) {
-            video.mozSrcObject = stream;
-          } else {
-            video.srcObject = stream;
-          }
-
-          return video.onerror = function (e) {
-            return stream.stop();
-          };
-        } else {}
+        track = stream.getTracks()[0];
+        webCamVideoEl.srcObject = stream;
+        return webCamVideoEl.onerror = function (e) {
+          return stream.stop();
+        };
       }
 
       function deviceError(error) {
@@ -528,28 +508,20 @@ function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else i
       }
 
       function falseSuccess(stream) {
-        //Prevent Webcam stream during video processing
+        //Stream for video processing
         stream.getVideoTracks()[0].stop();
       } // not doing anything now... for copying to a 2nd canvas
 
 
       function getSnapshot() {
-        var video; // If the current context is WebRTC/getUserMedia (something
+        var video; // If the current context is getUserMedia (something
         // passed back from the shim to avoid doing further feature
         // detection), we handle getting video/images for our canvas 
         // from our HTML5 <video> element.
 
         video = document.getElementsByTagName("video")[0];
         options.processor.updateImage(video);
-        return $("#webcam").hide(); // Otherwise, if the context is Flash, we ask the shim to
-        // directly call window.webcam, where our shim is located
-        // and ask it to capture for us.
-
-        if (webRtcOptions.context === "flash") {
-          return window.webcam.capture();
-        } else {
-          console.log("No context was supplied to getSnapshot()");
-        }
+        return $("#webcam").hide();
       }
 
       return {
@@ -1713,9 +1685,7 @@ function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else i
         document.getElementById('image').setAttribute("width", w);
         document.getElementById('image').setAttribute("height", h);
       }
-      $('#min').click(function (e) {
-        changeResolution('1px', '1px');
-      });
+
       $('#qvga').click(function (e) {
         changeResolution('100px', '100px');
       });
