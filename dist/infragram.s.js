@@ -126,11 +126,10 @@ function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else i
       options.video = function video() {
         options.camera.initialize();
         var interval;
-        if (options.processor.type == "webgl") interval = 15;else interval = 150;
         setInterval(function () {
           if (image) options.run(options.mode);
           options.camera.getSnapshot(); //if (options.colorized) return options.colorize();
-        }, interval);
+        }, 15);
       };
 
       options.processLocalVideo = function processLocalVideo() {
