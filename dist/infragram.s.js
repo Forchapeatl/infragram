@@ -129,7 +129,7 @@ function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else i
         setInterval(function () {
           if (image) options.run(options.mode);
           options.camera.getSnapshot(); //if (options.colorized) return options.colorize();
-        }, 15);
+        }, 15000);
       };
 
       options.processLocalVideo = function processLocalVideo() {
