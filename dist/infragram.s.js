@@ -1713,7 +1713,9 @@ function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else i
         document.getElementById('image').setAttribute("width", w);
         document.getElementById('image').setAttribute("height", h);
       }
-
+      $('#min').click(function (e) {
+        changeResolution('1px', '1px');
+      });
       $('#qvga').click(function (e) {
         changeResolution('100px', '100px');
       });
