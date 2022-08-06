@@ -92,6 +92,8 @@ function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else i
   2: [function (require, module, exports) {
     window.Infragram = function Infragram(options) {
       options = options || {};
+      options.version = options.version || 1; // for old instances where it hasn't been explicitly set
+
       options.uploader = options.uploader || false;
       options.processor = options.processor || 'javascript';
       options.camera = require('./io/camera')(options);
@@ -125,15 +127,6 @@ function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else i
 
       options.video = function video() {
         options.camera.initialize();
-        var interval;
-        setInterval(function () {
-          if (image) options.run(options.mode);
-          options.camera.getSnapshot(); //if (options.colorized) return options.colorize();
-        }, 15);
-      };
-
-      options.processLocalVideo = function processLocalVideo() {
-        options.camera.unInitialize();
         var interval;
         if (options.processor.type == "webgl") interval = 15;else interval = 150;
         setInterval(function () {
@@ -408,7 +401,14 @@ function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else i
       options.webcamVideoEl = document.getElementById(options.webcamVideoSelector); // Initialize getUserMedia with options
 
       function initialize() {
-        navigator.mediaDevices.getUserMedia(webRtcOptions).then(success).catch(deviceError); // iOS Safari 11 compatibility: https://github.com/webrtc/adapter/issues/685     
+        if (options.version == 1) {
+          getUserMedia(webRtcOptions, success, deviceError); // iOS Safari 11 compatibility: https://github.com/webrtc/adapter/issues/685
+
+          webRtcOptions.videoEl.setAttribute('autoplay', 'autoplay');
+          webRtcOptions.videoEl.setAttribute('playsinline', 'playsinline');
+        } else {
+          navigator.mediaDevices.getUserMedia(webRtcOptions).then(success).catch(deviceError);
+        }
 
         window.webcam = webRtcOptions; // this is weird but maybe used for flash fallback?
 
@@ -491,14 +491,32 @@ function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else i
       }
 
       function success(stream) {
-        window.localStream = stream;
-        isOnCam = stream;
-        isCamera = true;
-        track = stream.getTracks()[0];
-        webCamVideoEl.srcObject = stream;
-        return webCamVideoEl.onerror = function (e) {
-          return stream.stop();
-        };
+        if (options.version == 1) {
+          var video;
+
+          if (webRtcOptions.context === "webrtc") {
+            video = webRtcOptions.videoEl;
+
+            if (navigator.mozGetUserMedia) {
+              video.mozSrcObject = stream;
+            } else {
+              video.srcObject = stream;
+            }
+
+            return video.onerror = function (e) {
+              return stream.stop();
+            };
+          } else {}
+        } else {
+          window.localStream = stream;
+          isOnCam = stream;
+          isCamera = true;
+          track = stream.getTracks()[0];
+          webCamVideoEl.srcObject = stream;
+          return webCamVideoEl.onerror = function (e) {
+            return stream.stop();
+          };
+        }
       }
 
       function deviceError(error) {
@@ -514,14 +532,29 @@ function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else i
 
 
       function getSnapshot() {
-        var video; // If the current context is getUserMedia (something
-        // passed back from the shim to avoid doing further feature
-        // detection), we handle getting video/images for our canvas 
-        // from our HTML5 <video> element.
+        if (options.version == 1) {
+          var video; // If the current context is WebRTC/getUserMedia (something
+          // passed back from the shim to avoid doing further feature
+          // detection), we handle getting video/images for our canvas 
+          // from our HTML5 <video> element.
 
-        video = document.getElementsByTagName("video")[0];
-        options.processor.updateImage(video);
-        return $("#webcam").hide();
+          if (webRtcOptions.context === "webrtc") {
+            video = document.getElementsByTagName("video")[0];
+            options.processor.updateImage(video);
+            return $("#webcam").hide(); // Otherwise, if the context is Flash, we ask the shim to
+            // directly call window.webcam, where our shim is located
+            // and ask it to capture for us.
+          } else if (webRtcOptions.context === "flash") {
+            return window.webcam.capture();
+          } else {
+            console.log("No context was supplied to getSnapshot()");
+          }
+        } else {
+          var video;
+          video = document.getElementsByTagName("video")[0];
+          options.processor.updateImage(video);
+          return $("#webcam").hide();
+        }
       }
 
       return {
@@ -1462,9 +1495,6 @@ function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else i
   }, {}],
   15: [function (require, module, exports) {
     module.exports = function Interface(options) {
-      var isVideo = false,
-          isCamera = false;
-      var isOnCam;
       options.imageSelector = options.imageSelector || "#image-container";
       options.fileSelector = options.fileSelector || "#file-sel";
 
@@ -1536,113 +1566,32 @@ function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else i
           $('.choose-prompt').hide();
           $("#save-modal-btn").show();
           $("#save-zone").show();
+          var reader = new FileReader();
 
-          if (this.files[0].type == 'image/jpeg' || this.files[0].type == 'image/png') {
-            //localStream.getVideoTracks()[0].stop();  
-            //isCamera = false;
-            $("#localVideo").remove();
-            var reader = new FileReader();
+          reader.onload = function onReaderLoad(event) {
+            var img;
+            img = new Image();
 
-            reader.onload = function onReaderLoad(event) {
-              var img;
-              img = new Image();
-
-              img.onload = function onImageLoad() {
-                options.processor.updateImage(this);
-              };
-
-              return img.src = event.target.result;
+            img.onload = function onImageLoad() {
+              options.processor.updateImage(this);
             };
 
-            reader.readAsDataURL(this.files[0]);
-          } else {
-            videoURL = URL.createObjectURL(this.files[0]);
-            activateVideo(videoURL);
-          }
+            return img.src = event.target.result;
+          };
 
-          $('#preset-modal').offcanvas('show');
-          $('#preset-modalMobile').offcanvas('show');
+          reader.readAsDataURL(this.files[0]);
+          $('#preset-modal').modal('show');
           return true;
         });
         $("#webcam-activate").click(function () {
-          $('.mediaSelect').toggle();
-          $('.videoControls').toggle();
-
-          if (isVideo) {
-            $("video").remove(); //$("#localVideo").remove();      
-          }
-
-          isVideo = false;
-          isCamera = true;
           $('.choose-prompt').hide();
           $("#save-modal-btn").show();
           $("#save-zone").show();
           save_infragrammar_inputs();
           options.video();
-          $('#preset-modal').offcanvas('show');
-          $('#preset-modalMobile').offcanvas('show');
+          $('#preset-modal').modal('show');
           return true;
         });
-
-        function activateVideo(videoURL) {
-          options.processLocalVideo();
-
-          if (isCamera) {
-            localStream.getVideoTracks()[0].stop();
-          }
-
-          isCamera = false;
-          $("#localVideo").remove();
-          localVideo = document.createElement('video');
-          localVideo.setAttribute("id", "localVideo");
-          localVideo.setAttribute("src", videoURL);
-          localVideo.load();
-          localVideo.style.display = "none";
-          localVideo.style.width = "50px";
-          localVideo.style.height = "50px";
-          document.getElementById("video-container").appendChild(localVideo);
-          localVideo.play();
-          localVideo.muted = true;
-          localVideo.loop = true;
-          document.getElementById("localVideoControls").style.display = "block"; //Attach video Element tocustom Sleek Bar
-
-          localVideo.ontimeupdate = function () {
-            var percentage = localVideo.currentTime / localVideo.duration * 100;
-            $("#custom-seekbar span").css("width", percentage + "%");
-          };
-
-          isVideo = true;
-          $('.choose-prompt').hide();
-          $("#save-modal-btn").show();
-          $("#save-zone").show();
-          save_infragrammar_inputs();
-          $('#preset-modal').offcanvas('show');
-          $('#preset-modalMobile').offcanvas('show');
-          return true;
-        } //Start video controls
-
-
-        $("#custom-seekbar").on("click", function (e) {
-          localVideo = document.getElementById('localVideo');
-          var offset = $(this).offset();
-          var left = e.pageX - offset.left;
-          var totalWidth = $("#custom-seekbar").width();
-          var percentage = left / totalWidth;
-          var vidTime = localVideo.duration * percentage;
-          localVideo.currentTime = vidTime;
-        });
-        $("#localVideoPlayPause").on("click", function (e) {
-          localVideo = document.getElementById('localVideo');
-
-          if (localVideo.paused) {
-            localVideo.play();
-            document.getElementById("localVideoPlayPause").innerHTML = '<i class="fa fa-pause"></i>';
-          } else {
-            localVideo.pause();
-            document.getElementById("localVideoPlayPause").innerHTML = '<i class="fa fa-play"></i>';
-          }
-        }); //End video controls
-
         $("#snapshot").click(function () {
           options.camera.getSnapshot();
           return true;
@@ -1679,75 +1628,7 @@ function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else i
         $("[rel=tooltip]").tooltip();
         $("[rel=popover]").popover();
         return true;
-      }); //Start Handle multiple webcam resolutions
-
-      function changeResolution(w, h) {
-        document.getElementById('image').setAttribute("width", w);
-        document.getElementById('image').setAttribute("height", h);
-      }
-
-      $('#qvga').click(function (e) {
-        changeResolution('100px', '100px');
       });
-      $('#vga').click(function (e) {
-        changeResolution('800px', '600px');
-      });
-      $('#hd').click(function (e) {
-        changeResolution('2400px', '1800px');
-      });
-      $('#full-hd').click(function (e) {
-        changeResolution('6000px', '4000px');
-      }); //End Handling of Multiple webcam resolutions
-      //Start Canvas Recording and Download
-
-      var canvas = document.getElementById('image');
-      var ctx = canvas.getContext('2d');
-      var x = 0;
-      var stream = canvas.captureStream(); // grab our canvas MediaStream
-
-      var rec = new MediaRecorder(stream);
-
-      function exportVid(blob) {
-        var vid = document.createElement('video');
-        vid.src = URL.createObjectURL(blob);
-        vid.controls = true;
-        vid.style.display = 'none';
-        document.body.appendChild(vid);
-        var a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = vid.src;
-        a.download = 'infragramVideo.mp4';
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(function () {
-          document.body.removeChild(a);
-          URL.revokeObjectURL(vid.src);
-        }, 100);
-      }
-
-      $('#startRecord').click(function (e) {
-        var chunks = [];
-
-        rec.ondataavailable = function (e) {
-          return chunks.push(e.data);
-        };
-
-        rec.onstop = function (e) {
-          return exportVid(new Blob(chunks, {
-            type: 'video/h264'
-          }));
-        };
-
-        rec.start();
-        document.getElementById('startRecord').style.display = 'none';
-        document.getElementById('stopRecord').style.display = 'block';
-      });
-      $('#stopRecord').click(function (e) {
-        rec.stop();
-        document.getElementById('stopRecord').style.display = 'none';
-        document.getElementById('startRecord').style.display = 'block';
-        document.getElementById('downloadButton').style.display = 'block';
-      }); //End Canvas Recording and Download
     };
   }, {
     "../color/colormaps": 5,
