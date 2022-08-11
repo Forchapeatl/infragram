@@ -1576,6 +1576,10 @@ function _slicedToArray(arr, i) { if (Array.isArray(arr)) { return arr; } else i
           return true;
         });
         $(options.fileSelector).change(function () {
+          if (isVideo || isCamera) {
+            $("#localVideo").remove();
+          }
+
           $('.choose-prompt').hide();
           $("#save-modal-btn").show();
           $("#save-zone").show();
